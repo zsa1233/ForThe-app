@@ -1,1 +1,2 @@
 # ForThe-app
+Hello! This is a demo for my current working app that im building through the First Tech Fund AI for good fellowship. The app aims to help map out where trash is located and also has a cleanup option for users to verify and track their progress of enviornmental cleanup. The app is aimed to help non-profit and enviornmental organizations have reliable data about the progression in enviornmental cleanup. In order to access the video go to the "IMG_1429 (1).MOV video file and click "View Raw" in order to see the demo of the app!
