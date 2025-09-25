@@ -1,0 +1,207 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isValidUserData() {
+      let allowedFields = ['name', 'email', 'profileImageUrl', 'city', 'level', 
+                          'points', 'totalCleanups', 'totalPoundsCollected', 
+                          'currentStreak', 'longestStreak', 'badges', 'joinedAt', 
+                          'lastActiveAt', 'preferences', 'updatedAt'];
+      return request.resource.data.keys().hasAll(['name', 'email']) &&
+             request.resource.data.keys().hasOnly(allowedFields);
+    }
+    
+    function isValidCleanupSubmission() {
+      let allowedFields = ['userId', 'sessionId', 'location', 'type', 
+                          'poundsCollected', 'trashTypes', 'duration', 
+                          'beforePhotoPath', 'afterPhotoPath', 'comments', 
+                          'status', 'createdAt', 'updatedAt'];
+      return request.resource.data.keys().hasAll(['userId', 'location', 'type']) &&
+             request.resource.data.keys().hasOnly(allowedFields) &&
+             request.resource.data.userId == request.auth.uid &&
+             request.resource.data.poundsCollected is number &&
+             request.resource.data.poundsCollected >= 0 &&
+             request.resource.data.poundsCollected <= 1000; // Reasonable limit
+    }
+    
+    function isValidHotspot() {
+      return request.resource.data.keys().hasAll(['location', 'priority', 'isActive']) &&
+             request.resource.data.priority is number &&
+             request.resource.data.priority >= 1 &&
+             request.resource.data.priority <= 5;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && 
+             exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+    
+    function isModerator() {
+      return isAuthenticated() && 
+             (isAdmin() || 
+              exists(/databases/$(database)/documents/moderators/$(request.auth.uid)));
+    }
+
+    // Users collection - users can read/write their own data
+    match /users/{userId} {
+      allow read: if isAuthenticated() && 
+                     (isOwner(userId) || 
+                      // Allow reading basic profile info for leaderboards
+                      request.auth.uid != userId);
+      
+      allow create: if isOwner(userId) && isValidUserData();
+      
+      allow update: if isOwner(userId) && isValidUserData() &&
+                       // Prevent users from modifying critical fields directly
+                       !('points' in resource.data && 
+                         request.resource.data.points != resource.data.points &&
+                         !isAdmin()) &&
+                       !('totalCleanups' in resource.data && 
+                         request.resource.data.totalCleanups != resource.data.totalCleanups &&
+                         !isAdmin());
+      
+      allow delete: if isOwner(userId) || isAdmin();
+
+      // User's city achievements subcollection
+      match /city_achievements/{cityId}/achievements/{achievementId} {
+        allow read: if isOwner(userId);
+        allow write: if false; // Only server can update achievements
+      }
+
+      // User's cleanup sessions (local storage backup)
+      match /cleanup_sessions/{sessionId} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+
+    // Cleanup submissions - users can submit their own cleanups
+    match /cleanup_submissions/{submissionId} {
+      allow read: if isAuthenticated() &&
+                     (resource.data.userId == request.auth.uid ||
+                      isModerator());
+      
+      allow create: if isAuthenticated() && isValidCleanupSubmission();
+      
+      allow update: if isModerator() ||
+                       (isOwner(resource.data.userId) && 
+                        request.resource.data.diff(resource.data).affectedKeys()
+                          .hasOnly(['comments', 'updatedAt']));
+      
+      allow delete: if isAdmin();
+    }
+
+    // Predicted hotspots - read-only for users, write for admins
+    match /predicted_hotspots/{hotspotId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAdmin() && isValidHotspot();
+      allow delete: if isAdmin();
+    }
+
+    // City statistics - read-only for users, write for server/admins
+    match /city_stats/{cityId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Leaderboards - read-only for users, write for server/admins
+    match /leaderboards/{cityId} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Only server can update leaderboards
+      
+      match /{period}/{userId} {
+        allow read: if isAuthenticated();
+        allow write: if false; // Only server can update leaderboard entries
+      }
+    }
+
+    // City activity - read for authenticated users, write for server
+    match /city_activity/{cityId} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Only server functions can write activity
+      
+      match /activities/{activityId} {
+        allow read: if isAuthenticated();
+        allow write: if false; // Only server functions can write activities
+      }
+    }
+
+    // Admin collection - only readable by the user themselves
+    match /admins/{userId} {
+      allow read: if isOwner(userId);
+      allow write: if false; // Only set by other systems
+    }
+
+    // Moderator collection - only readable by the user themselves
+    match /moderators/{userId} {
+      allow read: if isOwner(userId);
+      allow write: if isAdmin();
+    }
+
+    // System logs - admin only
+    match /system_logs/{logId} {
+      allow read, write: if isAdmin();
+    }
+
+    // App configuration - read for authenticated users, write for admins
+    match /app_config/{configId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Feature flags - read for authenticated users, write for admins
+    match /feature_flags/{flagId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Feedback and reports - users can create, moderators can read/update
+    match /feedback/{feedbackId} {
+      allow read: if isModerator() || 
+                     (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow create: if isAuthenticated() &&
+                       request.resource.data.userId == request.auth.uid;
+      allow update: if isModerator();
+      allow delete: if isAdmin();
+    }
+
+    // User reports - similar to feedback
+    match /reports/{reportId} {
+      allow read: if isModerator() || 
+                     (isAuthenticated() && resource.data.reportedBy == request.auth.uid);
+      allow create: if isAuthenticated() &&
+                       request.resource.data.reportedBy == request.auth.uid;
+      allow update: if isModerator();
+      allow delete: if isAdmin();
+    }
+
+    // Notifications - users can read their own
+    match /notifications/{userId}/messages/{messageId} {
+      allow read: if isOwner(userId);
+      allow create: if isModerator(); // System/moderators can create notifications
+      allow update: if isOwner(userId) && 
+                       request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['read', 'readAt']);
+      allow delete: if isOwner(userId) || isModerator();
+    }
+
+    // Analytics data - read-only for admins
+    match /analytics/{analyticsId} {
+      allow read: if isAdmin();
+      allow write: if false; // Only server functions can write analytics
+    }
+
+    // Deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

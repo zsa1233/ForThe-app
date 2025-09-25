@@ -1,0 +1,487 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Setup Flutter Project with Firebase Integration",
+        "description": "Initialize the Flutter project with necessary dependencies and configure Firebase services for the Terra app.",
+        "details": "1. Create a new Flutter project using the latest stable Flutter SDK\n2. Configure project for both iOS and Android platforms\n3. Add required dependencies to pubspec.yaml:\n   - firebase_core\n   - firebase_auth\n   - cloud_firestore\n   - firebase_storage\n   - cloud_functions\n   - google_maps_flutter\n   - geolocator\n   - url_launcher\n   - image_picker\n4. Create Firebase project in Firebase Console\n5. Register iOS and Android apps in Firebase project\n6. Download and add configuration files (GoogleService-Info.plist, google-services.json)\n7. Initialize Firebase in main.dart:\n```dart\nvoid main() async {\n  WidgetsFlutterBinding.ensureInitialized();\n  await Firebase.initializeApp();\n  runApp(MyApp());\n}\n```\n8. Configure Firestore security rules for initial development",
+        "testStrategy": "1. Verify project builds successfully on both iOS and Android simulators\n2. Confirm Firebase initialization completes without errors\n3. Test basic Firebase connectivity by writing and reading a test document to Firestore\n4. Validate that all dependencies are correctly imported and accessible",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 2,
+        "title": "Implement User Authentication Flow",
+        "description": "Create the login and signup screens with Firebase Authentication integration.",
+        "details": "1. Design and implement login screen with email/password fields\n2. Create signup screen with required user profile fields (displayName, email, password)\n3. Implement Firebase Authentication methods:\n```dart\nclass AuthService {\n  final FirebaseAuth _auth = FirebaseAuth.instance;\n  final FirebaseFirestore _db = FirebaseFirestore.instance;\n\n  // Sign up with email & password\n  Future<UserCredential> signUp(String email, String password, String displayName) async {\n    try {\n      UserCredential result = await _auth.createUserWithEmailAndPassword(\n        email: email, password: password);\n      \n      // Create user document in Firestore\n      await _db.collection('users').doc(result.user.uid).set({\n        'displayName': displayName,\n        'photoURL': '',\n        'points': 0,\n        'poundsCollected': 0,\n        'badges': []\n      });\n      \n      return result;\n    } catch (e) {\n      throw e;\n    }\n  }\n\n  // Sign in with email & password\n  Future<UserCredential> signIn(String email, String password) async {\n    return await _auth.signInWithEmailAndPassword(\n      email: email, password: password);\n  }\n\n  // Sign out\n  Future<void> signOut() async {\n    return await _auth.signOut();\n  }\n}\n```\n4. Implement authentication state listener to handle app navigation based on auth state\n5. Add password reset functionality\n6. Create user profile setup flow for first-time users",
+        "testStrategy": "1. Test user registration with valid and invalid inputs\n2. Verify login functionality with correct and incorrect credentials\n3. Confirm user document is properly created in Firestore upon signup\n4. Test password reset flow\n5. Verify authentication persistence across app restarts\n6. Test sign out functionality",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 3,
+        "title": "Build Core UI Components and Navigation",
+        "description": "Develop the main UI components and navigation structure for the Terra app according to the UI/UX considerations in the PRD.",
+        "details": "1. Create a consistent theme with color scheme, typography, and component styles\n2. Implement bottom navigation bar with tabs for Map, Dashboard, Leaderboard, and Profile\n3. Design and implement the following screens:\n   - Home/Map screen\n   - Personal Dashboard screen\n   - Leaderboard screen\n   - Profile screen\n   - Cleanup submission flow screens\n4. Create reusable UI components:\n```dart\n// Example of a reusable badge widget\nclass AchievementBadge extends StatelessWidget {\n  final String badgeType;\n  final bool isEarned;\n  \n  const AchievementBadge({Key? key, required this.badgeType, this.isEarned = false}) : super(key: key);\n  \n  @override\n  Widget build(BuildContext context) {\n    return Container(\n      padding: EdgeInsets.all(8),\n      decoration: BoxDecoration(\n        shape: BoxShape.circle,\n        color: isEarned ? Theme.of(context).primaryColor : Colors.grey[300],\n      ),\n      child: Image.asset('assets/badges/$badgeType.png', \n        width: 50, \n        height: 50,\n        color: isEarned ? null : Colors.grey[500],\n      ),\n    );\n  }\n}\n```\n5. Implement screen transitions and navigation logic\n6. Ensure UI meets accessibility requirements (minimum 44x44px tap targets, proper contrast ratios)\n7. Add loading states and error handling UI components",
+        "testStrategy": "1. Test navigation flow between all screens\n2. Verify UI renders correctly on different screen sizes (use Flutter DevTools)\n3. Test accessibility with screen readers (VoiceOver on iOS, TalkBack on Android)\n4. Verify color contrast meets WCAG AA standards using a contrast checker\n5. Test UI performance to ensure 60fps animations and transitions\n6. Conduct usability testing with sample users to validate the UI flow",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 4,
+        "title": "Implement Mock Data Service",
+        "description": "Create a mock data service to provide hardcoded data for UI development and testing before integrating with Firebase.",
+        "details": "1. Design a MockDataService class that mimics the Firebase data structure:\n```dart\nclass MockDataService {\n  // Get mock user profile\n  Future<Map<String, dynamic>> getUserProfile(String userId) async {\n    return {\n      'displayName': 'Sophia Green',\n      'photoURL': 'https://example.com/profile.jpg',\n      'points': 1250,\n      'poundsCollected': 78,\n      'badges': ['first_cleanup', '50_lbs', 'streak_7']\n    };\n  }\n  \n  // Get mock hotspots\n  Future<List<Map<String, dynamic>>> getHotspots() async {\n    return [\n      {\n        'id': 'hotspot1',\n        'location': {'latitude': 37.7749, 'longitude': -122.4194},\n        'priority': 'High',\n        'isActive': true\n      },\n      // Add more mock hotspots\n    ];\n  }\n  \n  // Get mock leaderboard\n  Future<List<Map<String, dynamic>>> getLeaderboard() async {\n    return [\n      {'userId': 'user1', 'displayName': 'David Chen', 'points': 2340, 'rank': 1},\n      {'userId': 'user2', 'displayName': 'Maria Rodriguez', 'points': 1980, 'rank': 2},\n      // Add more mock leaderboard entries\n    ];\n  }\n  \n  // Mock cleanup submission\n  Future<bool> submitCleanup(Map<String, dynamic> submission) async {\n    // Simulate network delay\n    await Future.delayed(Duration(seconds: 2));\n    return true;\n  }\n}\n```\n2. Create factory pattern to switch between mock and real data services\n3. Add mock data for all required entities: users, hotspots, leaderboard entries, cleanup submissions\n4. Implement methods to simulate CRUD operations\n5. Add artificial delays to simulate network latency",
+        "testStrategy": "1. Verify all mock data methods return expected data structures\n2. Test that UI components correctly render the mock data\n3. Validate that artificial delays properly trigger loading states in the UI\n4. Test error scenarios by adding methods that return errors\n5. Verify that the factory pattern correctly switches between mock and real implementations",
+        "priority": "medium",
+        "dependencies": [
+          3
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 5,
+        "title": "Implement Google Maps Integration with Hotspot Display",
+        "description": "Integrate Google Maps and implement the predictive hotspot map feature to display AI-predicted litter hotspots.",
+        "details": "1. Set up Google Maps API key in Google Cloud Console\n2. Configure platform-specific settings for Maps SDK:\n   - iOS: Update Info.plist\n   - Android: Update AndroidManifest.xml\n3. Implement the map screen with Google Maps widget:\n```dart\nclass HotspotMapScreen extends StatefulWidget {\n  @override\n  _HotspotMapScreenState createState() => _HotspotMapScreenState();\n}\n\nclass _HotspotMapScreenState extends State<HotspotMapScreen> {\n  GoogleMapController? _mapController;\n  Set<Marker> _markers = {};\n  final DataService _dataService = GetIt.instance<DataService>();\n  \n  @override\n  void initState() {\n    super.initState();\n    _loadHotspots();\n  }\n  \n  Future<void> _loadHotspots() async {\n    final hotspots = await _dataService.getHotspots();\n    \n    setState(() {\n      _markers = hotspots.map((hotspot) {\n        return Marker(\n          markerId: MarkerId(hotspot['id']),\n          position: LatLng(\n            hotspot['location']['latitude'],\n            hotspot['location']['longitude']\n          ),\n          infoWindow: InfoWindow(\n            title: 'Priority: ${hotspot['priority']}',\n            snippet: 'Tap to start cleanup'\n          ),\n          onTap: () => _onHotspotTapped(hotspot),\n        );\n      }).toSet();\n    });\n  }\n  \n  void _onHotspotTapped(Map<String, dynamic> hotspot) {\n    // Navigate to cleanup flow\n    Navigator.push(\n      context,\n      MaterialPageRoute(\n        builder: (context) => CleanupStartScreen(hotspot: hotspot),\n      ),\n    );\n  }\n  \n  @override\n  Widget build(BuildContext context) {\n    return Scaffold(\n      appBar: AppBar(title: Text('Litter Hotspots')),\n      body: GoogleMap(\n        initialCameraPosition: CameraPosition(\n          target: LatLng(37.7749, -122.4194), // Default to San Francisco\n          zoom: 12,\n        ),\n        markers: _markers,\n        myLocationEnabled: true,\n        myLocationButtonEnabled: true,\n        onMapCreated: (controller) {\n          _mapController = controller;\n        },\n      ),\n      floatingActionButton: FloatingActionButton(\n        child: Icon(Icons.my_location),\n        onPressed: _goToUserLocation,\n      ),\n    );\n  }\n  \n  Future<void> _goToUserLocation() async {\n    final position = await Geolocator.getCurrentPosition();\n    _mapController?.animateCamera(\n      CameraUpdate.newLatLng(LatLng(position.latitude, position.longitude))\n    );\n  }\n}\n```\n4. Implement location permission handling\n5. Create custom marker icons for different hotspot priorities\n6. Add clustering for hotspots when zoomed out\n7. Implement map loading performance optimizations",
+        "testStrategy": "1. Test map loading performance (should render in under 3 seconds)\n2. Verify hotspot markers appear correctly with proper styling\n3. Test location permissions flow and current location functionality\n4. Verify marker tap interaction and navigation to cleanup flow\n5. Test map interaction on different device sizes\n6. Validate that custom marker icons render correctly\n7. Test marker clustering functionality at different zoom levels",
+        "priority": "high",
+        "dependencies": [
+          3,
+          4
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 6,
+        "title": "Implement Cleanup Submission Flow",
+        "description": "Create the step-by-step guided cleanup process including before/after photo capture, location verification, and submission.",
+        "details": "1. Design and implement a multi-step cleanup flow:\n   - Step 1: Hotspot information and cleanup instructions\n   - Step 2: Capture \"before\" photo\n   - Step 3: Cleanup timer/progress\n   - Step 4: Capture \"after\" photo\n   - Step 5: Report pounds collected\n   - Step 6: Submission and confirmation\n\n2. Implement camera integration for photo capture:\n```dart\nFuture<File?> _captureImage() async {\n  final picker = ImagePicker();\n  final pickedFile = await picker.pickImage(source: ImageSource.camera);\n  \n  if (pickedFile != null) {\n    return File(pickedFile.path);\n  }\n  return null;\n}\n```\n\n3. Implement location verification:\n```dart\nFuture<bool> _verifyUserAtHotspot(LatLng hotspotLocation) async {\n  final position = await Geolocator.getCurrentPosition();\n  final userLocation = LatLng(position.latitude, position.longitude);\n  \n  // Calculate distance between user and hotspot\n  final distanceInMeters = Geolocator.distanceBetween(\n    userLocation.latitude, userLocation.longitude,\n    hotspotLocation.latitude, hotspotLocation.longitude\n  );\n  \n  // User must be within 100 meters of the hotspot\n  return distanceInMeters <= 100;\n}\n```\n\n4. Create submission form with validation\n5. Implement local storage of submission data in case of network issues\n6. Add visual feedback for successful/failed submissions\n7. Implement a cleanup timer feature to track time spent\n8. Add image compression before submission to reduce bandwidth usage",
+        "testStrategy": "1. Test the complete cleanup flow from start to finish\n2. Verify camera integration works on both iOS and Android\n3. Test location verification with mock locations\n4. Validate form input with various test cases\n5. Test offline functionality and data persistence\n6. Verify image compression works correctly\n7. Test the flow with slow network conditions\n8. Verify visual feedback for all possible submission states",
+        "priority": "high",
+        "dependencies": [
+          3,
+          4,
+          5
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement Multi-Step UI Flow",
+            "description": "Design and implement the 6-step cleanup flow UI with navigation controls and progress indicators.",
+            "dependencies": [],
+            "details": "Create a reusable step controller that manages the flow between steps. Implement UI for all 6 steps: hotspot info, before photo, cleanup timer, after photo, waste report, and confirmation. Include progress indicators, back/next buttons, and step validation. Use a PageView or custom navigation solution for smooth transitions between steps.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Integrate Camera Functionality",
+            "description": "Implement camera integration for capturing before and after photos with proper permissions handling.",
+            "dependencies": [
+              "6.1"
+            ],
+            "details": "Use ImagePicker to access device camera. Implement permission requests for camera access on both platforms. Add image preview, retake options, and basic editing capabilities. Implement image compression to optimize storage and upload size. Handle device-specific camera issues and fallbacks.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Implement Location Verification",
+            "description": "Create location verification system to confirm user is at the cleanup hotspot.",
+            "dependencies": [
+              "6.1"
+            ],
+            "details": "Use device GPS to get current location. Compare user location with hotspot coordinates using geofencing. Implement error handling for location services being disabled. Create UI feedback for location verification status. Add override options for admins or special cases.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Build Form Validation System",
+            "description": "Implement comprehensive validation for all user inputs in the cleanup submission flow.",
+            "dependencies": [
+              "6.1"
+            ],
+            "details": "Create validation rules for all form fields (pounds collected, notes, etc.). Implement real-time validation with appropriate error messages. Add field focus management and keyboard handling. Ensure validation works consistently across all steps. Create reusable validation components for future use.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Develop Offline Support",
+            "description": "Create offline capabilities to allow users to complete cleanups without internet connection.",
+            "dependencies": [
+              "6.1",
+              "6.2",
+              "6.3",
+              "6.4"
+            ],
+            "details": "Implement local storage for cleanup data using Hive or SQLite. Create synchronization system to upload data when connection is restored. Add UI indicators for offline mode. Implement conflict resolution for data submitted while offline. Test various connectivity scenarios thoroughly.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Create Submission Handling",
+            "description": "Implement the final submission process including data packaging, upload, and confirmation.",
+            "dependencies": [
+              "6.1",
+              "6.2",
+              "6.3",
+              "6.4",
+              "6.5"
+            ],
+            "details": "Package all cleanup data (photos, location, waste amount, etc.) for submission. Implement progress indicators for upload process. Create success/failure handling with appropriate user feedback. Update user statistics and achievements upon successful submission. Add retry mechanisms for failed submissions.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Design Multi-Step UI Flow",
+            "description": "Create the UI components and navigation for the 6-step cleanup submission process",
+            "dependencies": [],
+            "details": "1. Design wireframes for each step in the flow\n2. Implement a step indicator component to show progress\n3. Create transitions between steps\n4. Implement navigation controls (back, next, cancel)\n5. Design confirmation and error states\n6. Ensure consistent styling across all steps",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 8,
+            "title": "Implement Camera Integration",
+            "description": "Build the camera functionality for capturing before and after cleanup photos",
+            "dependencies": [
+              "6.1"
+            ],
+            "details": "1. Implement camera access permissions handling\n2. Create a custom camera overlay with guidance for good photos\n3. Add image preview and retake options\n4. Implement image compression to reduce upload size\n5. Store captured images in local storage\n6. Handle device-specific camera issues",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 9,
+            "title": "Develop Location Verification",
+            "description": "Create the location verification system to confirm user is at the cleanup site",
+            "dependencies": [
+              "6.1"
+            ],
+            "details": "1. Implement GPS permission handling\n2. Create location accuracy verification\n3. Compare user location with hotspot coordinates\n4. Design UI for location verification status\n5. Implement retry mechanism for poor GPS signal\n6. Add manual override option with explanation field",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 10,
+            "title": "Build Form Validation",
+            "description": "Implement validation for all user input fields in the cleanup submission process",
+            "dependencies": [
+              "6.1"
+            ],
+            "details": "1. Create validation rules for pounds collected input\n2. Implement required field validation\n3. Add real-time validation feedback\n4. Create error messages for invalid inputs\n5. Implement form state persistence between steps\n6. Add confirmation dialog before final submission",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 11,
+            "title": "Create Offline Support",
+            "description": "Implement offline capabilities to allow users to complete cleanups without connectivity",
+            "dependencies": [
+              "6.1",
+              "6.2",
+              "6.3",
+              "6.4"
+            ],
+            "details": "1. Design local storage schema for cleanup data\n2. Implement data persistence between app sessions\n3. Create background sync mechanism for offline submissions\n4. Add UI indicators for offline mode\n5. Implement conflict resolution for delayed submissions\n6. Add notification system for successful background uploads",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 12,
+            "title": "Implement Submission Handling",
+            "description": "Create the backend integration for processing and storing cleanup submissions",
+            "dependencies": [
+              "6.5"
+            ],
+            "details": "1. Design Firebase data structure for cleanup submissions\n2. Implement image upload to Cloud Storage\n3. Create transaction handling for atomic submissions\n4. Add progress indicators for submission process\n5. Implement success/failure handling and user feedback\n6. Update user statistics upon successful submission",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "title": "Implement User Dashboard and Leaderboards",
+        "description": "Create the personal impact dashboard and leaderboards with data visualization to show user progress and achievements.",
+        "details": "1. Design and implement the personal dashboard with the following components:\n   - Impact statistics (pounds collected, cleanups completed)\n   - Progress bars for next achievements\n   - Badges/achievements display\n   - Recent activity feed\n\n2. Create custom data visualization widgets:\n```dart\nclass CircularProgressIndicator extends StatelessWidget {\n  final double value; // 0.0 to 1.0\n  final double size;\n  final Color color;\n  final String label;\n  \n  const CircularProgressIndicator({\n    Key? key,\n    required this.value,\n    this.size = 100,\n    required this.color,\n    required this.label,\n  }) : super(key: key);\n  \n  @override\n  Widget build(BuildContext context) {\n    return Column(\n      children: [\n        SizedBox(\n          height: size,\n          width: size,\n          child: Stack(\n            children: [\n              CircularProgressIndicator(\n                value: value,\n                strokeWidth: 10,\n                backgroundColor: Colors.grey[300],\n                valueColor: AlwaysStoppedAnimation<Color>(color),\n              ),\n              Center(\n                child: Text(\n                  '${(value * 100).toInt()}%',\n                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),\n                ),\n              ),\n            ],\n          ),\n        ),\n        SizedBox(height: 8),\n        Text(label, style: TextStyle(fontSize: 14)),\n      ],\n    );\n  }\n}\n```\n\n3. Implement the leaderboard screen with:\n   - Global leaderboard tab\n   - Friends leaderboard tab (for future implementation)\n   - User ranking and stats\n   - Filtering and time period selection\n\n4. Add pull-to-refresh functionality for updating data\n5. Implement animations for stats changes\n6. Create share functionality for achievements\n7. Add pagination for leaderboard to handle large datasets",
+        "testStrategy": "1. Test dashboard with various user profiles (new users, active users)\n2. Verify all data visualizations render correctly\n3. Test leaderboard sorting and filtering\n4. Verify animations work smoothly at 60fps\n5. Test share functionality with different platforms\n6. Validate dashboard updates when user data changes\n7. Test pagination with large mock datasets\n8. Verify UI responsiveness on different screen sizes",
+        "priority": "medium",
+        "dependencies": [
+          3,
+          4
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 8,
+        "title": "Replace Mock Data with Firebase Integration",
+        "description": "Connect the app to Firebase services by replacing the mock data service with real Firebase implementations.",
+        "details": "1. Implement Firestore data service:\n```dart\nclass FirestoreDataService implements DataService {\n  final FirebaseFirestore _db = FirebaseFirestore.instance;\n  \n  @override\n  Future<Map<String, dynamic>> getUserProfile(String userId) async {\n    final doc = await _db.collection('users').doc(userId).get();\n    return doc.data() ?? {};\n  }\n  \n  @override\n  Future<List<Map<String, dynamic>>> getHotspots() async {\n    final snapshot = await _db.collection('predicted_hotspots')\n      .where('isActive', isEqualTo: true)\n      .get();\n      \n    return snapshot.docs.map((doc) {\n      final data = doc.data();\n      return {\n        'id': doc.id,\n        ...data,\n      };\n    }).toList();\n  }\n  \n  @override\n  Future<List<Map<String, dynamic>>> getLeaderboard() async {\n    final snapshot = await _db.collection('users')\n      .orderBy('points', descending: true)\n      .limit(100)\n      .get();\n      \n    int rank = 1;\n    return snapshot.docs.map((doc) {\n      final data = doc.data();\n      return {\n        'userId': doc.id,\n        'rank': rank++,\n        ...data,\n      };\n    }).toList();\n  }\n  \n  @override\n  Future<String> submitCleanup(Map<String, dynamic> submission) async {\n    final docRef = await _db.collection('cleanup_submissions').add({\n      ...submission,\n      'status': 'pending',\n      'createdAt': FieldValue.serverTimestamp(),\n    });\n    return docRef.id;\n  }\n}\n```\n\n2. Implement Firebase Storage service for image uploads:\n```dart\nclass StorageService {\n  final FirebaseStorage _storage = FirebaseStorage.instance;\n  \n  Future<String> uploadImage(File image, String path) async {\n    final ref = _storage.ref().child(path);\n    final uploadTask = ref.putFile(image);\n    final snapshot = await uploadTask;\n    return await snapshot.ref.getDownloadURL();\n  }\n}\n```\n\n3. Update the data service factory to use Firebase implementations\n4. Implement real-time listeners for user data and leaderboards\n5. Add proper error handling and retry logic for network operations\n6. Implement caching strategy for offline support\n7. Set up Firestore indexes required for queries",
+        "testStrategy": "1. Test all CRUD operations with Firebase\n2. Verify real-time updates work correctly\n3. Test image upload functionality\n4. Validate error handling with simulated network errors\n5. Test offline functionality and data synchronization\n6. Verify security rules prevent unauthorized access\n7. Test performance with larger datasets\n8. Validate that all queries use proper indexes",
+        "priority": "high",
+        "dependencies": [
+          2,
+          5,
+          6,
+          7
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement Firestore Data Service",
+            "description": "Create a Firestore service class that implements the DataService interface for all CRUD operations",
+            "dependencies": [],
+            "details": "1. Create FirestoreDataService class implementing the DataService interface\n2. Implement methods for user profiles, hotspots, cleanup events, and leaderboard data\n3. Add proper error handling for failed Firestore operations\n4. Implement pagination for large data sets\n5. Add data validation before writing to Firestore\n6. Create unit tests for the Firestore service",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Implement Firebase Storage Service",
+            "description": "Create a service for handling image uploads and downloads using Firebase Storage",
+            "dependencies": [],
+            "details": "1. Create StorageService class for image operations\n2. Implement methods for uploading cleanup photos and profile images\n3. Add progress tracking for uploads\n4. Create image compression utility before upload\n5. Implement caching for frequently accessed images\n6. Add retry logic for failed uploads\n7. Write tests for the Storage service",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Implement Real-time Data Listeners",
+            "description": "Set up Firestore listeners for real-time updates to relevant collections",
+            "dependencies": [],
+            "details": "1. Create StreamControllers for hotspots, user data, and cleanup events\n2. Implement subscription management to prevent memory leaks\n3. Add data transformation layers between Firestore and app models\n4. Create UI update mechanisms for real-time changes\n5. Implement debouncing for frequent updates\n6. Test real-time updates with simulated data changes",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Implement Error Handling and Retry Logic",
+            "description": "Create robust error handling and retry mechanisms for Firebase operations",
+            "dependencies": [],
+            "details": "1. Create a FirebaseErrorHandler class to standardize error responses\n2. Implement exponential backoff for retrying failed operations\n3. Add user-friendly error messages for common failure scenarios\n4. Create logging system for Firebase errors\n5. Implement graceful degradation when services are unavailable\n6. Test various error scenarios including network failures",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Implement Offline Support",
+            "description": "Configure Firebase for offline persistence and implement synchronization logic",
+            "dependencies": [],
+            "details": "1. Enable Firestore offline persistence\n2. Create queue system for operations performed while offline\n3. Implement conflict resolution for data modified while offline\n4. Add UI indicators for offline status\n5. Create background sync service for pending uploads\n6. Test offline scenarios with network toggling",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Configure Firebase Security Rules",
+            "description": "Develop and deploy security rules for Firestore and Storage",
+            "dependencies": [],
+            "details": "1. Create role-based access control rules for Firestore\n2. Implement validation rules for data integrity\n3. Set up Storage security rules for image uploads\n4. Create test suite for security rules\n5. Implement rate limiting rules to prevent abuse\n6. Document all security rules with explanations\n7. Test rules with authentication scenarios",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 9,
+        "title": "Implement Cloud Functions for AI Verification",
+        "description": "Develop and deploy Cloud Functions to handle the AI verification process for cleanup submissions using Google Cloud Vision API.",
+        "details": "1. Set up Cloud Functions development environment\n2. Create a function to verify cleanup submissions:\n```javascript\nconst functions = require('firebase-functions');\nconst admin = require('firebase-admin');\nconst vision = require('@google-cloud/vision');\n\nadmin.initializeApp();\nconst db = admin.firestore();\nconst client = new vision.ImageAnnotatorClient();\n\nexports.verifyCleanup = functions.firestore\n  .document('cleanup_submissions/{submissionId}')\n  .onCreate(async (snapshot, context) => {\n    const submission = snapshot.data();\n    const submissionId = context.params.submissionId;\n    \n    try {\n      // Step 1: Verify location\n      const hotspotDoc = await db.collection('predicted_hotspots')\n        .doc(submission.hotspotId).get();\n      \n      if (!hotspotDoc.exists) {\n        return updateSubmissionStatus(submissionId, 'rejected', 'Hotspot not found');\n      }\n      \n      const hotspot = hotspotDoc.data();\n      const isLocationValid = verifyLocation(\n        submission.userLocation,\n        hotspot.location,\n        100 // 100 meters radius\n      );\n      \n      if (!isLocationValid) {\n        return updateSubmissionStatus(submissionId, 'rejected', 'Location mismatch');\n      }\n      \n      // Step 2: Analyze images with Vision API\n      const [beforeResult] = await client.objectLocalization(submission.beforePhotoURL);\n      const [afterResult] = await client.objectLocalization(submission.afterPhotoURL);\n      \n      const beforeObjects = beforeResult.localizedObjectAnnotations;\n      const afterObjects = afterResult.localizedObjectAnnotations;\n      \n      // Count objects that might be trash\n      const beforeTrashCount = countPotentialTrash(beforeObjects);\n      const afterTrashCount = countPotentialTrash(afterObjects);\n      \n      // Verify there was a significant reduction (at least 70%)\n      const reductionPercentage = beforeTrashCount > 0 ? \n        ((beforeTrashCount - afterTrashCount) / beforeTrashCount) * 100 : 0;\n      \n      if (reductionPercentage >= 70) {\n        // Cleanup verified successfully\n        await updateUserStats(submission.userId, submission.reportedPounds);\n        return updateSubmissionStatus(submissionId, 'approved');\n      } else {\n        return updateSubmissionStatus(submissionId, 'rejected', 'Insufficient cleanup detected');\n      }\n    } catch (error) {\n      console.error('Error verifying cleanup:', error);\n      return updateSubmissionStatus(submissionId, 'error', error.message);\n    }\n  });\n\n// Helper functions\nfunction verifyLocation(userLocation, hotspotLocation, maxDistanceMeters) {\n  // Calculate distance between points using Haversine formula\n  // Return true if within maxDistanceMeters\n}\n\nfunction countPotentialTrash(objects) {\n  // Count objects that might be trash (bottles, cans, etc.)\n  return objects.filter(obj => [\n    'Bottle', 'Can', 'Plastic bag', 'Box', 'Packaging',\n    'Food', 'Container', 'Waste'\n  ].includes(obj.name)).length;\n}\n\nasync function updateSubmissionStatus(submissionId, status, message = '') {\n  return db.collection('cleanup_submissions').doc(submissionId).update({\n    status,\n    verificationMessage: message,\n    verifiedAt: admin.firestore.FieldValue.serverTimestamp()\n  });\n}\n\nasync function updateUserStats(userId, poundsCollected) {\n  const userRef = db.collection('users').doc(userId);\n  \n  return db.runTransaction(async (transaction) => {\n    const userDoc = await transaction.get(userRef);\n    if (!userDoc.exists) return;\n    \n    const userData = userDoc.data();\n    const newPoints = userData.points + (poundsCollected * 10);\n    const newPounds = userData.poundsCollected + poundsCollected;\n    \n    // Check for new badges\n    const badges = [...userData.badges];\n    \n    if (!badges.includes('first_cleanup')) {\n      badges.push('first_cleanup');\n    }\n    \n    if (newPounds >= 50 && !badges.includes('50_lbs')) {\n      badges.push('50_lbs');\n    }\n    \n    if (newPounds >= 100 && !badges.includes('100_lbs')) {\n      badges.push('100_lbs');\n    }\n    \n    transaction.update(userRef, {\n      points: newPoints,\n      poundsCollected: newPounds,\n      badges: badges\n    });\n  });\n}\n```\n\n3. Set up Cloud Vision API authentication\n4. Create unit tests for the Cloud Function\n5. Deploy the function to Firebase\n6. Implement monitoring and logging for the function\n7. Add error handling and retry logic for API failures",
+        "testStrategy": "1. Test the function with sample before/after images\n2. Verify location verification logic with different coordinates\n3. Test the function with edge cases (no objects detected, same image for before/after)\n4. Validate user stats and badges are updated correctly\n5. Test error handling with simulated API failures\n6. Monitor function execution time to ensure it completes within 15 seconds\n7. Verify function scales properly with concurrent submissions",
+        "priority": "medium",
+        "dependencies": [
+          8
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Set up Cloud Functions Development Environment",
+            "description": "Configure the local development environment for Firebase Cloud Functions with necessary dependencies and project structure.",
+            "dependencies": [],
+            "details": "1. Install Node.js and npm if not already installed\n2. Install Firebase CLI tools: `npm install -g firebase-tools`\n3. Initialize Firebase project: `firebase login` and `firebase init functions`\n4. Set up project structure with proper folders for functions\n5. Install required dependencies: Firebase Admin SDK, Cloud Vision API client\n6. Configure environment variables for API keys and service accounts\n7. Set up local testing environment with Firebase emulators",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Implement Cleanup Verification Function",
+            "description": "Create the Cloud Function that processes new cleanup submissions and verifies them using image analysis.",
+            "dependencies": [],
+            "details": "1. Create function triggered by Firestore document creation in 'cleanup_submissions' collection\n2. Extract before/after images from the submission document\n3. Implement basic validation of submission data (user ID, timestamps, location data)\n4. Add logic to download images from Firebase Storage\n5. Implement error handling for missing or invalid data\n6. Set up proper response structure for verification results\n7. Add transaction handling to ensure atomic updates",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Integrate Cloud Vision API for Image Analysis",
+            "description": "Implement the core AI verification logic using Google Cloud Vision API to analyze before/after cleanup images.",
+            "dependencies": [],
+            "details": "1. Initialize the Vision API client in the Cloud Function\n2. Implement object detection on before/after images\n3. Create algorithm to compare detected objects between images\n4. Implement logic to determine if cleanup is legitimate based on object differences\n5. Add confidence scoring for verification results\n6. Implement safeguards against potential verification bypass attempts\n7. Optimize API calls to minimize costs",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Implement User Stats Update Logic",
+            "description": "Create the logic to update user statistics and award badges upon successful cleanup verification.",
+            "dependencies": [],
+            "details": "1. Implement Firestore transaction to update user statistics\n2. Calculate points based on cleanup size and difficulty\n3. Update user's total pounds collected and cleanup count\n4. Implement badge awarding logic based on achievements\n5. Create notification data for users about verification results\n6. Implement streak tracking for consecutive cleanups\n7. Add logic to handle special achievements or community milestones",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Implement Monitoring and Logging",
+            "description": "Set up comprehensive logging, error handling, and monitoring for the Cloud Functions.",
+            "dependencies": [],
+            "details": "1. Implement structured logging throughout all functions\n2. Set up error reporting to capture and notify about failures\n3. Create monitoring dashboard for function performance\n4. Implement rate limiting to prevent abuse\n5. Add metrics collection for verification accuracy\n6. Set up alerts for critical failures or unusual patterns\n7. Create admin dashboard for manual review of edge cases",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Set up Cloud Functions Development Environment",
+            "description": "Configure the local development environment for Firebase Cloud Functions including necessary dependencies and project structure.",
+            "dependencies": [],
+            "details": "1. Install Node.js and npm if not already installed\n2. Install Firebase CLI tools: `npm install -g firebase-tools`\n3. Initialize Firebase project locally: `firebase login` and `firebase init functions`\n4. Set up project structure with proper folders for functions\n5. Install required dependencies: `npm install firebase-admin firebase-functions @google-cloud/vision`\n6. Configure environment variables and service account credentials\n7. Set up local testing environment with Firebase emulators",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Implement Cleanup Verification Function",
+            "description": "Develop the core Cloud Function that processes cleanup submissions and verifies them using image analysis.",
+            "dependencies": [],
+            "details": "1. Create the function triggered by new Firestore cleanup submissions\n2. Implement logic to extract before/after images from the submission\n3. Develop verification algorithm to compare images and detect differences\n4. Implement location verification to ensure cleanup happened at the reported hotspot\n5. Add logic to determine if cleanup is valid based on image analysis results\n6. Update submission status in Firestore based on verification results\n7. Implement proper error handling and validation",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 8,
+            "title": "Integrate Google Cloud Vision API",
+            "description": "Implement the integration with Google Cloud Vision API for image analysis and object detection in cleanup photos.",
+            "dependencies": [],
+            "details": "1. Set up Cloud Vision API client in the function\n2. Implement object detection to identify trash/litter in before images\n3. Create comparison logic to verify fewer trash objects in after images\n4. Implement image labeling to categorize the type of cleanup\n5. Add safeguards against potential abuse (e.g., detecting if same image is used for before/after)\n6. Optimize API calls to minimize costs\n7. Implement caching strategy for Vision API results",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 9,
+            "title": "Implement User Stats Update Logic",
+            "description": "Develop the logic to update user statistics and award badges upon successful cleanup verification.",
+            "dependencies": [],
+            "details": "1. Implement Firestore transaction to safely update user statistics\n2. Create point calculation logic based on cleanup size and difficulty\n3. Develop badge awarding system based on user achievements\n4. Implement streak tracking for consecutive cleanups\n5. Add notification trigger when user earns new badges or achievements\n6. Implement leaderboard update logic\n7. Add safeguards against potential gaming of the system",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 10,
+            "title": "Implement Monitoring and Logging",
+            "description": "Set up comprehensive monitoring, logging, and error handling for the Cloud Functions.",
+            "dependencies": [],
+            "details": "1. Implement structured logging throughout all functions\n2. Set up Cloud Monitoring alerts for function failures\n3. Create dashboard for tracking function performance and usage\n4. Implement rate limiting to prevent abuse\n5. Add detailed error reporting with proper error codes\n6. Set up performance monitoring to track function execution time\n7. Implement retry logic for transient failures\n8. Create admin notification system for critical errors",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 10,
+        "title": "Implement Performance Optimization and Final Testing",
+        "description": "Optimize app performance, implement caching strategies, and conduct comprehensive testing to ensure the app meets all non-functional requirements.",
+        "details": "1. Implement image caching and optimization:\n```dart\nclass OptimizedNetworkImage extends StatelessWidget {\n  final String imageUrl;\n  final double width;\n  final double height;\n  \n  const OptimizedNetworkImage({\n    Key? key,\n    required this.imageUrl,\n    this.width,\n    this.height,\n  }) : super(key: key);\n  \n  @override\n  Widget build(BuildContext context) {\n    return CachedNetworkImage(\n      imageUrl: imageUrl,\n      width: width,\n      height: height,\n      placeholder: (context, url) => Container(\n        color: Colors.grey[300],\n        child: Center(child: CircularProgressIndicator()),\n      ),\n      errorWidget: (context, url, error) => Icon(Icons.error),\n      fit: BoxFit.cover,\n      memCacheWidth: (width * 2).toInt(), // For high-res displays\n      maxHeightDiskCache: 1000, // Limit disk cache size\n    );\n  }\n}\n```\n\n2. Implement Firestore data caching:\n```dart\nclass CachedFirestoreService {\n  final FirebaseFirestore _db = FirebaseFirestore.instance;\n  final Map<String, dynamic> _cache = {};\n  final Duration _cacheDuration = Duration(minutes: 5);\n  \n  Future<List<Map<String, dynamic>>> getHotspots() async {\n    final cacheKey = 'hotspots';\n    \n    // Check cache first\n    if (_cache.containsKey(cacheKey) && \n        _cache[cacheKey]['timestamp'].isAfter(DateTime.now().subtract(_cacheDuration))) {\n      return _cache[cacheKey]['data'];\n    }\n    \n    // Fetch from Firestore\n    final snapshot = await _db.collection('predicted_hotspots')\n      .where('isActive', isEqualTo: true)\n      .get();\n      \n    final data = snapshot.docs.map((doc) => {\n      'id': doc.id,\n      ...doc.data(),\n    }).toList();\n    \n    // Update cache\n    _cache[cacheKey] = {\n      'data': data,\n      'timestamp': DateTime.now(),\n    };\n    \n    return data;\n  }\n}\n```\n\n3. Optimize app startup time:\n   - Implement splash screen\n   - Use deferred loading for non-critical components\n   - Optimize asset loading\n\n4. Implement performance monitoring:\n   - Add Firebase Performance Monitoring\n   - Track key user interactions\n   - Monitor network requests\n\n5. Conduct comprehensive testing:\n   - Performance testing (startup time, map loading)\n   - Security testing (Firestore rules, authentication)\n   - Accessibility testing (screen reader compatibility)\n   - Battery usage optimization\n   - Network usage optimization\n\n6. Implement crash reporting with Firebase Crashlytics\n7. Add analytics to track user engagement and feature usage",
+        "testStrategy": "1. Measure app startup time on various devices (target: under 5 seconds)\n2. Test map loading performance (target: under 3 seconds)\n3. Verify UI maintains 60fps during animations and transitions\n4. Test AI verification process completion time (target: under 15 seconds)\n5. Conduct accessibility testing with screen readers\n6. Verify all tap targets meet minimum size requirements (44x44px)\n7. Test app performance with slow network conditions\n8. Validate app works correctly in offline mode\n9. Test battery usage during typical user sessions\n10. Verify security rules prevent unauthorized data access",
+        "priority": "medium",
+        "dependencies": [
+          8,
+          9
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement Image Caching Strategy",
+            "description": "Develop and implement an efficient image caching system to reduce network requests and improve load times for frequently accessed images.",
+            "dependencies": [],
+            "details": "1. Implement CachedNetworkImage for all remote images\n2. Configure cache size limits and expiration policies\n3. Add placeholder and error widgets for better UX\n4. Implement progressive image loading for large images\n5. Create utility functions for image preloading of critical assets",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Implement Firestore Data Caching",
+            "description": "Create a local caching layer for Firestore data to reduce network calls and enable offline functionality.",
+            "dependencies": [],
+            "details": "1. Configure Firestore persistence for offline capabilities\n2. Implement a repository pattern with local cache\n3. Add cache invalidation strategies based on data freshness\n4. Create mechanisms to sync local changes when connectivity is restored\n5. Implement background data prefetching for critical collections",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Optimize App Startup Time",
+            "description": "Analyze and optimize the application startup sequence to meet the target of under 5 seconds on standard devices.",
+            "dependencies": [],
+            "details": "1. Implement lazy loading of non-critical components\n2. Optimize Flutter widget tree initialization\n3. Defer Firebase initialization for non-critical services\n4. Implement splash screen with loading indicators\n5. Measure and optimize asset loading times\n6. Use Flutter DevTools to identify startup bottlenecks",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Implement Performance Monitoring",
+            "description": "Set up comprehensive performance monitoring to track key metrics and identify optimization opportunities.",
+            "dependencies": [],
+            "details": "1. Integrate Firebase Performance Monitoring\n2. Add custom traces for critical user journeys\n3. Implement frame rate monitoring for UI performance\n4. Create performance dashboards for key metrics\n5. Set up automated performance regression alerts\n6. Add network request timing and error tracking",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Conduct Comprehensive Testing",
+            "description": "Perform thorough testing across all functional and non-functional requirements to ensure the application meets quality standards.",
+            "dependencies": [],
+            "details": "1. Create test plan covering all user flows\n2. Perform UI testing across different device sizes\n3. Test offline functionality and data synchronization\n4. Conduct accessibility testing with screen readers\n5. Perform load testing for concurrent users\n6. Test battery consumption during extended use\n7. Verify all animations maintain 60fps",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Integrate Analytics for Performance Tracking",
+            "description": "Implement analytics to track user behavior, feature usage, and performance metrics in production.",
+            "dependencies": [],
+            "details": "1. Set up Firebase Analytics with custom events\n2. Implement crash reporting with Firebase Crashlytics\n3. Create funnels for key user journeys\n4. Track performance metrics as custom events\n5. Implement A/B testing framework for performance improvements\n6. Create automated reports for stakeholders",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "created": "2025-07-29T02:38:53.425Z",
+      "updated": "2025-07-29T02:38:53.425Z",
+      "description": "Tasks for master context"
+    }
+  }
+}

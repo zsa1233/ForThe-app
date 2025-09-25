@@ -1,2 +1,16 @@
-# ForThe-app
-Hello! This is a demo for my current working app that im building through the First Tech Fund AI for good fellowship. The app map out where trash is located and also has a cleanup option for users to verify and track their progress of enviornmental cleanup. The app is also aimed to help non-profit and enviornmental organizations have reliable data about the progression in enviornmental cleanup. In order to access the video go to the "IMG_1429 (1).MOV video file and click "View Raw" in order to see the demo of the app!
+# fresh_firebase_app
+
+A new Flutter project.
+
+## Getting Started
+
+This project is a starting point for a Flutter application.
+
+A few resources to get you started if this is your first Flutter project:
+
+- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
+- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+
+For help getting started with Flutter development, view the
+[online documentation](https://docs.flutter.dev/), which offers tutorials,
+samples, guidance on mobile development, and a full API reference.
